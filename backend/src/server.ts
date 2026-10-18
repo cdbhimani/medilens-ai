@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
+import path from 'path';
+import fs from 'fs';
 import reportRoutes from './routes/reportRoutes';
 import demoRoutes from './routes/demoRoutes';
 import healthRoutes from './routes/healthRoutes';
@@ -42,15 +44,35 @@ app.use('/api/health', healthRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/demo', demoRoutes);
 
-// Root route
-app.get('/', (_req, res) => {
-  res.json({
-    name: 'MediLens AI Backend API',
-    tagline: 'Understand your medical reports. Prepare for better conversations.',
-    docs: '/api/health',
-    status: 'online'
+// Static frontend serving for production / unified Cloud Run container
+const publicClientPath = path.resolve(__dirname, '../public');
+const frontendDistPath = path.resolve(__dirname, '../../frontend/dist');
+const clientBuildPath = fs.existsSync(publicClientPath)
+  ? publicClientPath
+  : fs.existsSync(frontendDistPath)
+  ? frontendDistPath
+  : null;
+
+if (clientBuildPath) {
+  app.use(express.static(clientBuildPath));
+  // SPA Catch-all: send index.html for any client-side routes
+  app.get('*', (req, res, next) => {
+    if (req.path.startsWith('/api') || req.path === '/health') {
+      return next();
+    }
+    res.sendFile(path.join(clientBuildPath, 'index.html'));
   });
-});
+} else {
+  // Root route fallback if frontend is not built
+  app.get('/', (_req, res) => {
+    res.json({
+      name: 'MediLens AI Backend API',
+      tagline: 'Understand your medical reports. Prepare for better conversations.',
+      docs: '/api/health',
+      status: 'online'
+    });
+  });
+}
 
 // Centralized error handling
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
