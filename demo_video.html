@@ -265,6 +265,20 @@
 <script>
   const canvas = document.getElementById('videoCanvas');
   const ctx = canvas.getContext('2d');
+
+  if (!CanvasRenderingContext2D.prototype.roundRect) {
+    CanvasRenderingContext2D.prototype.roundRect = function(x, y, w, h, r) {
+      const radius = typeof r === 'number' ? r : (Array.isArray(r) ? r[0] : 8);
+      this.beginPath();
+      this.moveTo(x + radius, y);
+      this.arcTo(x + w, y, x + w, y + h, radius);
+      this.arcTo(x + w, y + h, x, y + h, radius);
+      this.arcTo(x, y + h, x, y, radius);
+      this.arcTo(x, y, x + w, y, radius);
+      this.closePath();
+      return this;
+    };
+  }
   const playBtn = document.getElementById('playBtn');
   const playText = document.getElementById('playText');
   const playIcon = document.getElementById('playIcon');
@@ -1062,17 +1076,8 @@
     recordText.textContent = 'Recording (Click to Finish & Save)...';
     recordedChunks = [];
 
-    // Capture 30fps stream from canvas
+    // Capture 30fps stream directly from canvas
     const stream = canvas.captureStream(30);
-
-    // Audio capture via AudioContext if supported
-    try {
-      const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      const dest = audioCtx.createMediaStreamDestination();
-      stream.addTrack(dest.stream.getAudioTracks()[0]);
-    } catch (e) {
-      console.log('Audio track skipped:', e);
-    }
 
     const mime = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
       ? 'video/webm;codecs=vp9'
@@ -1083,7 +1088,7 @@
     mediaRecorder = new MediaRecorder(stream, { mimeType: mime });
 
     mediaRecorder.ondataavailable = function(e) {
-      if (e.data.size > 0) {
+      if (e.data && e.data.size > 0) {
         recordedChunks.push(e.data);
       }
     };
@@ -1105,7 +1110,7 @@
       setTimeout(() => { recordText.textContent = 'Export Video (.webm)'; }, 4000);
     };
 
-    mediaRecorder.start();
+    mediaRecorder.start(1000);
     restartDemo();
   }
 

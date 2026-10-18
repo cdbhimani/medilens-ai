@@ -43,3 +43,6 @@ ui-debug.log
 # Temporary / Scratch
 tmp/
 temp/
+tools/
+*.wav
+video_assets/
