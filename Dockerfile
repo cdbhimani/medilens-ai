@@ -1,13 +1,6 @@
-# ===================================================================
-# MediLens AI — Unified Production Dockerfile for Google Cloud Run
-# Builds both Frontend (Vite + React) & Backend (Node.js + Express)
-# Serves the complete web application directly on the root URL
-# ===================================================================
-
-# -------------------------------------------------------------
-# Stage 1: Build the React + TypeScript Frontend
-# -------------------------------------------------------------
+# Stage 1: Build React + Vite frontend
 FROM node:20-alpine AS frontend-builder
+
 WORKDIR /app/frontend
 
 COPY frontend/package*.json ./
@@ -16,10 +9,13 @@ RUN npm ci
 COPY frontend/ ./
 RUN npm run build
 
-# -------------------------------------------------------------
-# Stage 2: Build the TypeScript Backend
-# -------------------------------------------------------------
+# Ensure Vite generated the frontend entry point
+RUN test -f /app/frontend/dist/index.html
+
+
+# Stage 2: Build TypeScript backend
 FROM node:20-alpine AS backend-builder
+
 WORKDIR /app/backend
 
 COPY backend/package*.json backend/tsconfig.json ./
@@ -28,29 +24,34 @@ RUN npm ci
 COPY backend/src/ ./src/
 RUN npm run build
 
-# -------------------------------------------------------------
-# Stage 3: Production Runner Container
-# -------------------------------------------------------------
+# Ensure the backend entry point exists
+RUN test -f /app/backend/dist/server.js
+
+
+# Stage 3: Production image
 FROM node:20-alpine AS runner
+
 WORKDIR /app
 
 ENV NODE_ENV=production
 ENV PORT=8080
 
-# Install production dependencies for the backend
+# Install backend production dependencies
 COPY backend/package*.json ./
-RUN npm ci --only=production
+RUN npm ci --omit=dev
 
-# Copy compiled backend JavaScript
+# Copy compiled backend
 COPY --from=backend-builder /app/backend/dist ./dist
 
-# Copy compiled frontend static assets into public/ (served by Express)
+# Copy built frontend into /app/public
 COPY --from=frontend-builder /app/frontend/dist ./public
 
-# Security best practice: run as non-root user
+# Ensure the deployed image contains index.html
+RUN test -f /app/public/index.html
+
+# Run as non-root user
 USER node
 
 EXPOSE 8080
 
-# Start server
 CMD ["node", "dist/server.js"]
