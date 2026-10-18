@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Activity, UploadCloud, History, Shield, LayoutDashboard, UserCheck, Stethoscope, Zap, Loader2 } from 'lucide-react';
+import { Activity, UploadCloud, History, Shield, LayoutDashboard, UserCheck, Stethoscope, Zap, Loader2, Video } from 'lucide-react';
 import { loadDemoReport } from '../services/api';
 
 interface Props {
@@ -105,6 +105,17 @@ export const Navbar: React.FC<Props> = ({ activeTab, setActiveTab, onNavigate })
 
           {/* Right Header Status / Demo Pill */}
           <div className="flex items-center gap-2.5">
+            <a
+              href="/demo_video.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-bold text-teal-700 bg-teal-50 hover:bg-teal-100 border border-teal-200 transition"
+              title="Watch 3.5-minute project demonstration video"
+            >
+              <Video className="w-3.5 h-3.5 text-teal-600" />
+              <span>Demo Video</span>
+            </a>
+
             <button
               onClick={handleQuickSample}
               disabled={loadingSample}
