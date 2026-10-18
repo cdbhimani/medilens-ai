@@ -1,5 +1,5 @@
 # Stage 1: Build React + Vite frontend
-FROM node:20-alpine AS frontend-builder
+FROM node:24-alpine AS frontend-builder
 
 WORKDIR /app/frontend
 
@@ -14,7 +14,7 @@ RUN test -f /app/frontend/dist/index.html
 
 
 # Stage 2: Build TypeScript backend
-FROM node:20-alpine AS backend-builder
+FROM node:24-alpine AS backend-builder
 
 WORKDIR /app/backend
 
