@@ -41,13 +41,14 @@ COPY backend/package*.json ./
 RUN npm ci --omit=dev
 
 # Copy compiled backend
-COPY --from=backend-builder /app/backend/dist ./dist
+COPY --chown=node:node --from=backend-builder /app/backend/dist ./dist
 
-# Copy built frontend into /app/public
-COPY --from=frontend-builder /app/frontend/dist ./public
+# Copy built frontend into /app/public and /app/dist/public
+COPY --chown=node:node --from=frontend-builder /app/frontend/dist ./public
+COPY --chown=node:node --from=frontend-builder /app/frontend/dist ./dist/public
 
 # Ensure the deployed image contains index.html
-RUN test -f /app/public/index.html
+RUN test -f /app/public/index.html && test -f /app/dist/public/index.html
 
 # Run as non-root user
 USER node
